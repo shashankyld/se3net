@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import math
 from ipdb import set_trace
-from rot_utils import rotationMatrixToEulerAngles, axisAngletoRotationMatrix, \
+from util.rot_utils import rotationMatrixToEulerAngles, axisAngletoRotationMatrix, \
               sincos2rotm
 
 

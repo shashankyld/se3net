@@ -13,6 +13,8 @@ from copy import deepcopy as copy
 import math
 import sys
 from pdb import set_trace as st 
+# Import Image
+from PIL import Image
 
 sys.path.append('..')
 from util.rot_utils import axisAngleToRotationMatrix_batched, rotationMatrixToAxisAngle_batched
@@ -315,11 +317,66 @@ class SE3Net(nn.Module):
 # def define_model(pretrained=True, action_dim=6):
 #     return TCNModel(models.inception_v3(pretrained=pretrained), action_dim)
 
-model = SE3Net(5,4)
+model = SE3Net(3,4)
+
+## Given a path to the image convert the image to tensor of shape 1,3,224,224 and 
+## given a path to the action file read the file where it has a 4 dimensional vector and convert it to tensor of shape 1,4
+from matplotlib import pyplot as plt
+img_path = "/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/episode_0/rgb_1.png"
+action_path = "/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/episode_0/action"
+# Visualize the original image with a title using matplotlib
+img = Image.open(img_path)
+img = img.resize((224,224))
+img = np.array(img)
+plt.imshow(img)
+plt.title('Original Image')
+plt.show()
+
+
+
+def convert_image_and_action(img_path, action_path):
+    # Read image
+    img = Image.open(img_path)
+    img = img.resize((224,224))
+    img = np.array(img)
+    img = img / 255
+    img = torch.tensor(img)
+    img = img.permute(2,0,1)
+    img = img.unsqueeze(0)
+    # Read action
+    with open(action_path, 'r') as f:
+        action = f.read()
+    action = action.split(' ')
+    action = [float(i) for i in action]
+    action = torch.tensor(action)
+    action = action.unsqueeze(0)
+    print("converted image shape: ", img.size())
+    print("converted action shape: ", action.size())
+    print("final image type: ", type(img))
+    print("final action type: ", type(action))
+    return img, action
+
+
+x, u = convert_image_and_action(img_path, action_path)
+
 x = torch.rand(1,3,224,224)
 u = torch.rand(1,4)
 poses_new, x_new = model(x,u)
-st()
+
+print("shape of x_new: ", x_new.size()) # should be 1,3,224,224
+print("shape of poses_new: ", poses_new.size())
+
+def conver_img_torch_to_numpy(x):
+    x = x.squeeze(0)
+    x = x.permute(1,2,0)
+    x = x.detach().numpy()
+    return x
+
+x_new = conver_img_torch_to_numpy(x_new)
+plt.imshow(x_new)
+plt.title('Transformed Image')
+plt.show()
+
 
 
 # Generate some data and build train script
