@@ -253,3 +253,52 @@ def concat_frames_nosave(frames):
       else:
         concat_img = np.concatenate([concat_img, img], axis=2)
   return concat_img
+
+def plot_image_from_se3_output(image_tensor):
+    """ 
+    image tensor will have this shape: (1,3, 224, 224)
+    # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
+    """
+    matplotlib.use('TkAgg')
+    image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
+    plt.imshow(image)
+    plt.show()
+    return
+
+def plot_image_from_se3_input_output_pair(image_tensor, image_tensor_out):
+    """ 
+    image tensor will have this shape: (1,3, 224, 224)
+    # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
+    """
+    matplotlib.use('TkAgg')
+    image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
+    image_out = image_tensor_out.squeeze(0).permute(1,2,0).detach().numpy()
+    fig, ax = plt.subplots(1,2)
+    ax[0].imshow(image)
+    ax[1].imshow(image_out)
+    # Add title for each image
+    ax[0].set_title('Input Image')
+    ax[1].set_title('Output Image')
+
+    plt.show()
+    return
+
+def plot_image_from_se3_input_output_gt(image_tensor, image_tensor_gt, image_tensor_out):
+    """ 
+    image tensor will have this shape: (1,3, 224, 224)
+    # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
+    """
+    matplotlib.use('TkAgg')
+    image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
+    image_out = image_tensor_out.squeeze(0).permute(1,2,0).detach().numpy()
+    image_gt = image_tensor_gt.squeeze(0).permute(1,2,0).detach().numpy()
+    fig, ax = plt.subplots(1,3)
+    ax[0].imshow(image)
+    ax[1].imshow(image_gt)
+    ax[2].imshow(image_out)
+    # Add title for each image
+    ax[0].set_title('Input Image')
+    ax[1].set_title('Ground Truth Image')
+    ax[2].set_title('Output Image')
+    plt.show()
+    return

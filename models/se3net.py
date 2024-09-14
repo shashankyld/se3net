@@ -359,15 +359,25 @@ def convert_image_and_action(img_path, action_path):
     return img, action
 
 
-x, u = convert_image_and_action(img_path, action_path)
-
+# x, u = convert_image_and_action(img_path, action_path)
+'''
 x = torch.rand(1,3,224,224)
 u = torch.rand(1,4)
 poses_new, x_new = model(x,u)
+# Print datatypes of x, u, x_new, poses_new  and their elements data types
+print("type of x: ", type(x))
+print("type of u: ", type(u))
+print("type of x_new: ", type(x_new))
+print("type of poses_new: ", type(poses_new))
+print("type of x elements: ", x.dtype)
+print("type of u elements: ", u.dtype)
+print("type of x_new elements: ", x_new.dtype)
+print("type of poses_new elements: ", poses_new.dtype)
+
 
 print("shape of x_new: ", x_new.size()) # should be 1,3,224,224
 print("shape of poses_new: ", poses_new.size())
-
+'''
 def conver_img_torch_to_numpy(x):
     x = x.squeeze(0)
     x = x.permute(1,2,0)
