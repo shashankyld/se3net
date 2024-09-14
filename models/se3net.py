@@ -139,6 +139,7 @@ class PoseAndMaskEncoder(nn.Module):
         return m
 
     def decode_pose(self, z):
+        print(z.size())
         self.s1 = self.Fc1(z.view(-1, 128 * 7 * 7))
         self.s2 = self.Fc2(self.s1)
         self.s3 = self.Fc3(self.s2)
