@@ -111,6 +111,8 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True)
 
 from matplotlib import pyplot as plt
 
+'''
+# To verify the dataset loader by index
 for i in range(2):
     depth_1, depth_2, flow, rgb_1, rgb_2 = dataset.get_images_numpy(i)
     action, action_ang, crop_info = dataset.get_actions_numpy(i)
@@ -118,6 +120,6 @@ for i in range(2):
     plt.imshow(rgb_1)
 
 plt.show()
-    
+''' 
 
-    
+# Understand dataloader output

@@ -320,6 +320,7 @@ class SE3Net(nn.Module):
 
 model = SE3Net(3,4)
 
+'''
 ## Given a path to the image convert the image to tensor of shape 1,3,224,224 and 
 ## given a path to the action file read the file where it has a 4 dimensional vector and convert it to tensor of shape 1,4
 from matplotlib import pyplot as plt
@@ -378,7 +379,7 @@ plt.imshow(x_new)
 plt.title('Transformed Image')
 plt.show()
 
-
+'''
 
 # Generate some data and build train script
 # check out what happens with background mask
