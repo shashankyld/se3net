@@ -139,7 +139,7 @@ class PoseAndMaskEncoder(nn.Module):
         return m
 
     def decode_pose(self, z):
-        print(z.size())
+        # print(z.size())
         self.s1 = self.Fc1(z.view(-1, 128 * 7 * 7))
         self.s2 = self.Fc2(self.s1)
         self.s3 = self.Fc3(self.s2)
@@ -363,6 +363,7 @@ def convert_image_and_action(img_path, action_path):
 
 # x, u = convert_image_and_action(img_path, action_path)
 '''
+'''
 x = torch.rand(1,3,224,224)
 u = torch.rand(1,4)
 poses_new, x_new = model(x,u)
@@ -379,6 +380,7 @@ print("type of poses_new elements: ", poses_new.dtype)
 
 print("shape of x_new: ", x_new.size()) # should be 1,3,224,224
 print("shape of poses_new: ", poses_new.size())
+'''
 '''
 def conver_img_torch_to_numpy(x):
     x = x.squeeze(0)
