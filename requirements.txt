@@ -5,3 +5,4 @@ ipdb
 matplotlib
 tensorboard
 tqdm
+open3d

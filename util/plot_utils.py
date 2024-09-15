@@ -259,6 +259,8 @@ def plot_image_from_se3_output(image_tensor):
     image tensor will have this shape: (1,3, 224, 224)
     # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
     """
+    if image_tensor.device.type == 'cuda':
+        image_tensor = image_tensor.cpu()
     matplotlib.use('TkAgg')
     image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
     plt.imshow(image)
@@ -271,6 +273,10 @@ def plot_image_from_se3_input_output_pair(image_tensor, image_tensor_out):
     # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
     """
     matplotlib.use('TkAgg')
+    if image_tensor.device.type == 'cuda':
+        image_tensor = image_tensor.cpu()
+        image_tensor_out = image_tensor_out.cpu()
+
     image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
     image_out = image_tensor_out.squeeze(0).permute(1,2,0).detach().numpy()
     fig, ax = plt.subplots(1,2)
@@ -289,6 +295,10 @@ def plot_image_from_se3_input_output_gt(image_tensor, image_tensor_gt, image_ten
     # Visulize the image tensor using matplotlib after converting to numpy array and reshaping 
     """
     matplotlib.use('TkAgg')
+    if image_tensor.device.type == 'cuda':
+        image_tensor = image_tensor.cpu()
+        image_tensor_gt = image_tensor_gt.cpu()
+        image_tensor_out = image_tensor_out.cpu()
     image = image_tensor.squeeze(0).permute(1,2,0).detach().numpy()
     image_out = image_tensor_out.squeeze(0).permute(1,2,0).detach().numpy()
     image_gt = image_tensor_gt.squeeze(0).permute(1,2,0).detach().numpy()

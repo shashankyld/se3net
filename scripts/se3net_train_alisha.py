@@ -35,12 +35,12 @@ batch = next(iter(dataloader))
 
 model = SE3Net(3,4)
 model = model.cuda()
-model.load_state_dict(torch.load("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/se3net/se3net_model.pth"))
+# model.load_state_dict(torch.load("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/se3net/se3net_model.pth"))
 
 # Training the model
 # Define the loss function and optimizer
 criterion = ImageReconstructionLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.00001)
+optimizer = optim.Adam(model.parameters(), lr=0.000001)
 
 # Training loop and visulaize the results and loss using tensorboard
 writer = SummaryWriter()
@@ -55,15 +55,19 @@ for epoch in range(num_epochs):
     for i, data in enumerate(tqdm(dataloader)):
         # Get the inputs and labels
         x = data['rgb_1']
+        x_depth = data['depth_1']
         # print x device
         # print("x device: ", x.device)
         x2 = data['rgb_2']
+        x2_depth = data['depth_2']
         u = data['action'].float()
         # print("x.shape, x2.shape, u.shape ", x.shape, x2.shape, u.shape) # Expected: torch.Size([32, 3, 224, 224]) torch.Size([32, 3, 224, 224]) torch.Size([32, 4])
         # Forward pass
         poses_new, x_new = model(x, u)
+        _, x_depth_new = model(x_depth, u)
         # Compute the loss
-        loss = criterion(x_new, x2)
+        loss = criterion(x_new, x2) 
+        # loss = criterion(x_new, x2) + criterion(x_depth_new, x2_depth)
         # Zero the gradients, backward pass, update the weights
         optimizer.zero_grad()
         loss.backward()
@@ -72,15 +76,21 @@ for epoch in range(num_epochs):
         # Print the loss every 10 iterations
         if i % 10 == 9:
             print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 10))
+            # # print both the losses
+            # print("Image loss: ", criterion(x_new, x2).item())
+            # print("Depth loss: ", criterion(x_depth_new, x2_depth).item())
+            # print all the losses in one line
+            # print('[%d, %5d] loss: %.3f, Image loss: %.3f, Depth loss: %.3f' % (epoch + 1, i + 1, running_loss / 10, criterion(x_new, x2).item(), criterion(x_depth_new, x2_depth).item()))
             running_loss = 0.0
         # Log the loss to tensorboard
         writer.add_scalar('training loss', loss.item(), epoch * len(dataloader) + i)
-    # Visualize the results
-    plot_image_from_se3_output(x_new)
-    plot_image_from_se3_input_output_pair(x, x_new)
-    plot_image_from_se3_input_output_gt(x, x2, x_new)
     # Save the model
     torch.save(model.state_dict(), 'se3net_model.pth')
+    # Visualize the results
+    # plot_image_from_se3_output(x_new)
+    # plot_image_from_se3_input_output_pair(x, x_new)
+    # plot_image_from_se3_input_output_gt(x, x2, x_new)
+    
     # Close the tensorboard writer
     writer.close()
 

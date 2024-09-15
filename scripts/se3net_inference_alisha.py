@@ -40,17 +40,59 @@ print(batch['action'].shape, batch['action_ang'].shape, batch['crop_info'].shape
 model = SE3Net(3,4)
 model.load_state_dict(torch.load("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/se3net/se3net_model.pth"))
 x = batch['rgb_1']
+x_depth = batch['depth_1'] # 1, 1, 224, 224
+x_depth_rgb = x_depth.repeat(1, 3, 1, 1) # 1, 3, 224, 224
 x2 = batch['rgb_2']
+x2_depth = batch['depth_2']
+x2_depth_rgb = x2_depth.repeat(1, 3, 1, 1)
 u = batch['action'].float()
+
+pt1 = batch['pt1'] # 1, 3, 224, 224
+pt2 = batch['pt2']
+print("pt1.shape, pt2.shape: ", pt1.shape, pt2.shape)
+# Visualize the point cloud data using open3d
+import open3d as o3d
+# Open3D PCD shape: (N, 3)
+pcd = o3d.geometry.PointCloud()
+pt1 = pt1.squeeze().cpu().detach().numpy() # 3, 224, 224
+pt2 = pt2.squeeze().cpu().detach().numpy() # 3, 224, 224
+
+print("pt1.shape, pt2.shape: ", pt1.shape, pt2.shape)
+# Convert to (224*224, 3)
+pt1 = np.transpose(pt1, (1, 2, 0)).reshape(-1, 3)
+pt2 = np.transpose(pt2, (1, 2, 0)).reshape(-1, 3)
+print("pt1.shape, pt2.shape: ", pt1.shape, pt2.shape)
+
+pt1_color = batch['rgb1'].squeeze().cpu().detach().numpy() # 3, 224, 224
+pt2_color = batch['rgb2'].squeeze().cpu().detach().numpy() # 3, 224, 224
+pt1_color = np.transpose(pt1_color, (1, 2, 0)).reshape(-1, 3)
+pt2_color = np.transpose(pt2_color, (1, 2, 0)).reshape(-1, 3)
+print("pt1_color.shape, pt2_color.shape: ", pt1_color.shape, pt2_color.shape)
+
+
+# Visualize the point cloud data
+pcd.points = o3d.utility.Vector3dVector(pt1)
+
+# Add colors to the point cloud
+pcd.colors = o3d.utility.Vector3dVector(pt1_color)
+
+axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+o3d.visualization.draw_geometries([pcd, axis])
+
+
+
+
 # Print datatypes of x, u
 print(x.dtype, u.dtype)
 
 # Forward pass
 poses_new, x_new = model(x, u)
+_, x_new_depth = model(x_depth_rgb, u)
 print(" x_new.shape, poses_new.shape ", x_new.shape, poses_new.shape)
 plot_image_from_se3_output(x_new)
 plot_image_from_se3_input_output_pair(x, x_new)
 plot_image_from_se3_input_output_gt(x, x2, x_new)
+plot_image_from_se3_input_output_gt(x_depth_rgb, x2_depth_rgb, x_new_depth)
 
 # Check if the images have any nan or inf values, x, x2, x_new
 if torch.isnan(x).any() or torch.isinf(x).any():
@@ -65,7 +107,7 @@ if torch.isnan(x2).any() or torch.isinf(x2).any():
 image_loss = ImageReconstructionLoss()
 # Calculate the loss
 image_loss_1 = image_loss(x_new, x2)
-image_loss_2 = image_loss(x_new, x_new)
-print("Image Loss: ", image_loss_1)
-print("Image Loss 2: ", image_loss_2)
+image_loss_2 = image_loss(x_new_depth, x2_depth_rgb)
+print("Image Loss rgb: ", image_loss_1)
+print("Image Loss depth: ", image_loss_2)
 

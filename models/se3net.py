@@ -299,6 +299,68 @@ class TransformNetwork(nn.Module):
         x_new = self.transform_point_cloud(x, mask, delta_poses)
         return x_new, poses_new 
 
+
+class ProjectionLayer(nn.Module):
+    def __init__(self, fx, fy, cx, cy):
+        """
+        Initializes the projection layer with camera intrinsics.
+        
+        Args:
+        - fx, fy: Focal lengths of the camera in the x and y axes.
+        - cx, cy: Principal points (optical center) in the image plane.
+        """
+        super(ProjectionLayer, self).__init__()
+        self.fx = 917.6631469726562
+        self.fy = 917.4476318359375
+        self.cx = 956.4253540039062
+        self.cy = 553.5712280273438
+
+    def forward(self, P_t, P_t1):
+        """
+        Forward pass of the projection layer.
+        
+        Args:
+        - P_t: 3D point cloud at time t (shape: [batch_size, 3, H, W]).
+        - P_t1: Predicted 3D point cloud at time t+1 (shape: [batch_size, 3, H, W]).
+
+        Returns:
+        - w_t: 2D optical flow between time t and t+1 (shape: [batch_size, 2, H, W]).
+        """
+        # Extract the 3D coordinates (X, Y, Z) for time t and t+1
+        X_t, Y_t, Z_t = P_t[:, 0, :, :], P_t[:, 1, :, :], P_t[:, 2, :, :]
+        X_t1, Y_t1, Z_t1 = P_t1[:, 0, :, :], P_t1[:, 1, :, :], P_t1[:, 2, :, :]
+
+        # Project the 3D points at time t into 2D image coordinates
+        u_t = (X_t * self.fx) / Z_t + self.cx
+        v_t = (Y_t * self.fy) / Z_t + self.cy
+
+        # Project the 3D points at time t+1 into 2D image coordinates
+        u_t1 = (X_t1 * self.fx) / Z_t1 + self.cx
+        v_t1 = (Y_t1 * self.fy) / Z_t1 + self.cy
+
+        # Compute the optical flow as the difference between 2D projections
+        flow_u = u_t1 - u_t
+        flow_v = v_t1 - v_t
+
+        # Stack the optical flow components (u, v) into the output tensor
+        w_t = torch.stack((flow_u, flow_v), dim=1)  # Shape: [batch_size, 2, H, W]
+
+        return w_t
+
+    def set_camera_params(self, fx, fy, cx, cy):
+        """
+        Set the camera parameters for the projection layer.
+        Useful incase of other datasets with different camera parameters.
+        
+        Args:
+        - fx, fy: Focal lengths of the camera in the x and y axes.
+        - cx, cy: Principal points (optical center) in the image plane.
+        """
+        self.fx = fx
+        self.fy = fy
+        self.cx = cx
+        self.cy = cy
+
 class SE3Net(nn.Module):
     def __init__(self, k, action_dim, gamma=1.0, sigma=0.5, training=True):
         super(SE3Net, self).__init__()
