@@ -1,23 +1,13 @@
-import os
-import torch
-import torch.nn as nn
-import torch.optim as optim
+
+# Create a dataloader for the episodes - (action  action_ang  crop_info  depth_1.png  depth_2.png  flow.png  rgb_1.png  rgb_2.png), 
+# And there are many episodes in the dataset inside a folder
+# Methods should include get item and length and get images in numpy and tensor format for the episodes
+# action, action_ang, crop_info are text files with a list of numbers in them - load them as numpy arrays
 import torchvision.transforms as transforms
 from PIL import Image
-from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
+import os
+import torch
 import numpy as np
-from util.plot_utils import plot_image_from_se3_output, plot_image_from_se3_input_output_pair, plot_image_from_se3_input_output_gt
-from models.se3net import SE3Net
-from util.loss import ImageReconstructionLoss
-# Define the image loss functions
-class ImageReconstructionLoss(nn.Module):
-    def __init__(self):
-        super(ImageReconstructionLoss, self).__init__()
-        self.mse_loss = nn.MSELoss()
-
-    def forward(self, predicted_image, ground_truth_image):
-        return self.mse_loss(predicted_image, ground_truth_image)
 
 def load_image(image_path):
     transform = transforms.Compose([
@@ -28,10 +18,7 @@ def load_image(image_path):
     return transform(image).permute(0,1,2).numpy()  # Move channels to the last dimension and convert to numpy array
 
 
-# Create a dataloader for the episodes - (action  action_ang  crop_info  depth_1.png  depth_2.png  flow.png  rgb_1.png  rgb_2.png), 
-# And there are many episodes in the dataset inside a folder
-# Methods should include get item and length and get images in numpy and tensor format for the episodes
-# action, action_ang, crop_info are text files with a list of numbers in them - load them as numpy arrays
+
 class EpisodeDataset(torch.utils.data.Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir
@@ -106,59 +93,3 @@ class EpisodeDataset(torch.utils.data.Dataset):
         # Return float32 datatype only
         return action, action_ang, crop_info
     
-
-# Testing the dataset loader 
-dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/")
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
-
-
-from matplotlib import pyplot as plt
-
-
-'''
-# To verify the dataset loader by index
-for i in range(2):
-    depth_1, depth_2, flow, rgb_1, rgb_2 = dataset.get_images_tensor(i)
-    action, action_ang, crop_info = dataset.get_actions_tensor(i)
-    # Print the shapes of the images and actions
-    print(depth_1.shape, depth_2.shape, flow.shape, rgb_1.shape, rgb_2.shape)
-    print(action.shape, action_ang.shape, crop_info.shape)
-'''
-
-# Load a batch of episodes and print the shapes of the images and actions
-batch = next(iter(dataloader))
-print(batch['depth_1'].shape, batch['depth_2'].shape, batch['flow'].shape, batch['rgb_1'].shape, batch['rgb_2'].shape)
-print(batch['action'].shape, batch['action_ang'].shape, batch['crop_info'].shape)
-
-
-model = SE3Net(3,4)
-x = batch['rgb_1']
-x2 = batch['rgb_2']
-u = batch['action'].float()
-# Print datatypes of x, u
-print(x.dtype, u.dtype)
-
-# Forward pass
-poses_new, x_new = model(x, u)
-print(" x_new.shape, poses_new.shape ", x_new.shape, poses_new.shape)
-plot_image_from_se3_output(x_new)
-plot_image_from_se3_input_output_pair(x, x_new)
-plot_image_from_se3_input_output_gt(x, x2, x_new)
-
-# Check if the images have any nan or inf values, x, x2, x_new
-if torch.isnan(x).any() or torch.isinf(x).any():
-    raise ValueError("input_image contains NaN or Inf values.")
-if torch.isnan(x_new).any() or torch.isinf(x_new).any():
-    raise ValueError("predicted_image contains NaN or Inf values.")
-if torch.isnan(x2).any() or torch.isinf(x2).any():
-    raise ValueError("ground_truth_image contains NaN or Inf values.")
-
-
-# Define the loss function
-image_loss = ImageReconstructionLoss()
-# Calculate the loss
-image_loss_1 = image_loss(x_new, x2)
-image_loss_2 = image_loss(x_new, x_new)
-print("Image Loss: ", image_loss_1)
-print("Image Loss 2: ", image_loss_2)
-
