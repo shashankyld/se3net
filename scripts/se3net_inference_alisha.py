@@ -9,7 +9,7 @@ from tqdm import tqdm
 import numpy as np
 from util.plot_utils import plot_image_from_se3_output, plot_image_from_se3_input_output_pair, plot_image_from_se3_input_output_gt
 from models.se3net import SE3Net
-
+from util.loss import ImageReconstructionLoss
 # Define the image loss functions
 class ImageReconstructionLoss(nn.Module):
     def __init__(self):
@@ -144,3 +144,18 @@ print(" x_new.shape, poses_new.shape ", x_new.shape, poses_new.shape)
 plot_image_from_se3_output(x_new)
 plot_image_from_se3_input_output_pair(x, x_new)
 plot_image_from_se3_input_output_gt(x, x2, x_new)
+
+# Check if the images have any nan or inf values, x, x2, x_new
+if torch.isnan(x).any() or torch.isinf(x).any():
+    raise ValueError("input_image contains NaN or Inf values.")
+if torch.isnan(x_new).any() or torch.isinf(x_new).any():
+    raise ValueError("predicted_image contains NaN or Inf values.")
+if torch.isnan(x2).any() or torch.isinf(x2).any():
+    raise ValueError("ground_truth_image contains NaN or Inf values.")
+
+
+# Define the loss function
+image_loss = ImageReconstructionLoss()
+# Calculate the loss
+loss = image_loss(x_new, x2)
+print("Loss: ", loss)

@@ -9,15 +9,8 @@ from tqdm import tqdm
 import numpy as np
 from util.plot_utils import plot_image_from_se3_output, plot_image_from_se3_input_output_pair, plot_image_from_se3_input_output_gt
 from models.se3net import SE3Net
+from util.loss import ImageReconstructionLoss
 
-# Define the image loss functions
-class ImageReconstructionLoss(nn.Module):
-    def __init__(self):
-        super(ImageReconstructionLoss, self).__init__()
-        self.mse_loss = nn.MSELoss()
-
-    def forward(self, predicted_image, ground_truth_image):
-        return self.mse_loss(predicted_image, ground_truth_image)
 
 def load_image(image_path):
     transform = transforms.Compose([
@@ -112,35 +105,8 @@ dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sigh
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
 
-from matplotlib import pyplot as plt
-
-
-'''
-# To verify the dataset loader by index
-for i in range(2):
-    depth_1, depth_2, flow, rgb_1, rgb_2 = dataset.get_images_tensor(i)
-    action, action_ang, crop_info = dataset.get_actions_tensor(i)
-    # Print the shapes of the images and actions
-    print(depth_1.shape, depth_2.shape, flow.shape, rgb_1.shape, rgb_2.shape)
-    print(action.shape, action_ang.shape, crop_info.shape)
-'''
 
 # Load a batch of episodes and print the shapes of the images and actions
 batch = next(iter(dataloader))
-print(batch['depth_1'].shape, batch['depth_2'].shape, batch['flow'].shape, batch['rgb_1'].shape, batch['rgb_2'].shape)
-print(batch['action'].shape, batch['action_ang'].shape, batch['crop_info'].shape)
-
 
 model = SE3Net(3,4)
-x = batch['rgb_1']
-x2 = batch['rgb_2']
-u = batch['action'].float()
-# Print datatypes of x, u
-print(x.dtype, u.dtype)
-
-# Forward pass
-poses_new, x_new = model(x, u)
-print(" x_new.shape, poses_new.shape ", x_new.shape, poses_new.shape)
-plot_image_from_se3_output(x_new)
-plot_image_from_se3_input_output_pair(x, x_new)
-plot_image_from_se3_input_output_gt(x, x2, x_new)

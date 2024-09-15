@@ -134,8 +134,8 @@ class PoseAndMaskEncoder(nn.Module):
         self.m3 = self.Deconv3(self.m2 + self.z3) # 16 x 56 ** 2
         self.m4 = self.Deconv4(self.m3 + self.z2) # 8 x 112 ** 2
         self.m5 = self.Deconv5(self.m4 + self.z1) # k x 224 ** 2
-        k_sum = torch.sum(self.m5, dim=1)
-        m = self.m5 / k_sum # sum of all mask weights per pixel equals 1
+        k_sum = torch.sum(self.m5, dim=1) + 1e-6
+        m = self.m5 / k_sum  # sum of all mask weights per pixel equals 1
         return m
 
     def decode_pose(self, z):
@@ -242,7 +242,7 @@ class TransformNetwork(nn.Module):
         mask = mask.view(-1, self.k, H * W)
         eps = torch.normal(mean=torch.zeros(self.k, H * W), std=torch.ones(self.k, H * W) * self.sigma ** 2)
         mask = (mask + eps.unsqueeze(0)) ** self.gamma
-        k_sum = torch.sum(mask, dim=1)
+        k_sum = torch.sum(mask, dim=1) + 1e-6
         mask = mask / k_sum # sum of all mask weights per pixel equals 1    
         mask = mask.view(-1, self.k, H, W)
         if not self.training:
@@ -313,6 +313,8 @@ class SE3Net(nn.Module):
     def forward(self, x, action):
         mask, poses = self.encoder(x)
         x_new, poses_new = self.transformer(x, mask, poses, action)
+        # Convert the values in x_new between 0 and 1
+        x_new = torch.clamp(x_new, 0.0, 1.0)
         return poses_new.unsqueeze(0), x_new.unsqueeze(0)
        
 # def define_model(pretrained=True, action_dim=6):
