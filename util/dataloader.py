@@ -20,10 +20,11 @@ def load_image(image_path):
 
 
 class EpisodeDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, device='cpu'):
         self.root_dir = root_dir
         self.episodes = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
-
+        self.device = device
+        
     def __len__(self):
         return len(self.episodes)
 
@@ -31,17 +32,33 @@ class EpisodeDataset(torch.utils.data.Dataset):
         episode_dir = os.path.join(self.root_dir, self.episodes[idx])
 
         # Load the data for the episode
-        action = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'action')))
-        action_ang = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'action_ang')))
-        crop_info = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'crop_info')))
+        action = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'action'))).to(self.device)
+        action_ang = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'action_ang'))).to(self.device)
+        crop_info = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'crop_info'))).to(self.device)
         
         # Convert images to numpy arrays for visualization
         depth_1 = load_image(os.path.join(episode_dir, 'depth_1.png'))
+        # Convert to device
+        depth_1 = torch.tensor(depth_1, device=self.device).permute(0,1,2)
         depth_2 = load_image(os.path.join(episode_dir, 'depth_2.png'))
-        flow = load_image(os.path.join(episode_dir, 'flow.png'))
+        # Convert to device
+        depth_2 = torch.tensor(depth_2, device=self.device).permute(0,1,2)
+        try:
+            flow = load_image(os.path.join(episode_dir, 'flow.png'))
+            # Convert to device
+            flow = torch.tensor(flow, device=self.device).permute(0,1,2)
+        except:
+            flow = np.zeros((224,224,3))
+            flow = torch.tensor(flow, device=self.device).permute(0,1,2)
         rgb_1 = load_image(os.path.join(episode_dir, 'rgb_1.png'))
-        rgb_2 = load_image(os.path.join(episode_dir, 'rgb_2.png'))
+        # Convert to device
+        rgb_1 = torch.tensor(rgb_1, device=self.device).permute(0,1,2)
 
+        rgb_2 = load_image(os.path.join(episode_dir, 'rgb_2.png'))
+        # Convert to device
+        rgb_2 = torch.tensor(rgb_2, device=self.device).permute(0,1,2)
+        # Print device of the images and actions
+        # print("Device of the images and actions: ", depth_1.device, depth_2.device, flow.device, rgb_1.device, rgb_2.device, action.device, action_ang.device, crop_info.device)
         return {
             'action': action,
             'action_ang': action_ang,
@@ -72,6 +89,13 @@ class EpisodeDataset(torch.utils.data.Dataset):
         rgb_2 = load_image(os.path.join(episode_dir, 'rgb_2.png'))
         # Return float32 
 
+        #convert the images and flow to device
+        depth_1 = torch.tensor(depth_1, device=self.device).permute(0,1,2)
+        depth_2 = torch.tensor(depth_2, device=self.device).permute(0,1,2)
+        flow = torch.tensor(flow, device=self.device).permute(0,1,2)
+        rgb_1 = torch.tensor(rgb_1, device=self.device).permute(0,1,2)
+        rgb_2 = torch.tensor(rgb_2, device=self.device).permute(0,1,2)
+
         return torch.tensor(depth_1).permute(0,1,2), torch.tensor(depth_2).permute(0,1,2), \
                torch.tensor(flow).permute(0,1,2), torch.tensor(rgb_1).permute(0,1,2), \
                torch.tensor(rgb_2).permute(0,1,2)
@@ -91,5 +115,11 @@ class EpisodeDataset(torch.utils.data.Dataset):
         action_ang = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'action_ang')) , dtype=torch.float32)
         crop_info = torch.tensor(np.loadtxt(os.path.join(episode_dir, 'crop_info')) , dtype=torch.float32)
         # Return float32 datatype only
+
+        #convert the actions to device
+        action = torch.tensor(action, device=self.device)
+        action_ang = torch.tensor(action_ang, device=self.device)
+        crop_info = torch.tensor(crop_info, device=self.device)
+
         return action, action_ang, crop_info
     

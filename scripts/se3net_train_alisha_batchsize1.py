@@ -24,7 +24,7 @@ def load_image(image_path):
 
 
 # Testing the dataset loader 
-dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/")
+dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/", device='cuda')
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
 

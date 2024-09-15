@@ -24,7 +24,8 @@ def load_image(image_path):
 
 
 # Testing the dataset loader 
-dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/")
+dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/threeblocks/threeblocks/", device='cuda')
+# dataset = EpisodeDataset("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/Datasets/freiburg_real_poking/aisobjects/ais_objects/")
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
 
@@ -33,6 +34,7 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 batch = next(iter(dataloader))
 
 model = SE3Net(3,4)
+model = model.cuda()
 model.load_state_dict(torch.load("/home/shashank/Documents/UniBonn/Sem4/alisha/Hind4Sight/se3net/se3net_model.pth"))
 
 # Training the model
@@ -42,47 +44,6 @@ optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
 # Training loop and visulaize the results and loss using tensorboard
 writer = SummaryWriter()
-
-# # Training loop
-# num_epochs = 10
-# for epoch in range(num_epochs):
-#     running_loss = 0.0
-#     for i, data in enumerate(dataloader):
-#         # Get the inputs and labels
-#         x = data['rgb_1']
-#         x2 = data['rgb_2']
-#         u = data['action'].float()
-#         # Forward pass
-#         poses_new, x_new = model(x, u)
-#         # Compute the loss
-#         loss = criterion(x_new, x2)
-#         # Zero the gradients, backward pass, update the weights
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#         running_loss += loss.item()
-#         # Print the loss every 10 iterations
-#         if i % 10 == 9:
-#             print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 10))
-#             running_loss = 0.0
-#         # Log the loss to tensorboard
-#         writer.add_scalar('training loss', loss.item(), epoch * len(dataloader) + i)
-#     # Visualize the results
-#     plot_image_from_se3_output(x_new)
-#     plot_image_from_se3_input_output_pair(x, x_new)
-#     plot_image_from_se3_input_output_gt(x, x2, x_new)
-#     # Save the model
-#     torch.save(model.state_dict(), 'se3net_model.pth')
-#     # Close the tensorboard writer
-#     writer.close()
-
-# # Save the model
-# torch.save(model.state_dict(), 'se3net_model.pth')
-# # Close the tensorboard writer
-# writer.close()
-# # End of script
-
-
 
 
 # Use tqdn and visualize the the results and loss using tensorboard
@@ -94,8 +55,11 @@ for epoch in range(num_epochs):
     for i, data in enumerate(tqdm(dataloader)):
         # Get the inputs and labels
         x = data['rgb_1']
+        # print x device
+        # print("x device: ", x.device)
         x2 = data['rgb_2']
         u = data['action'].float()
+        # print("x.shape, x2.shape, u.shape ", x.shape, x2.shape, u.shape) # Expected: torch.Size([32, 3, 224, 224]) torch.Size([32, 3, 224, 224]) torch.Size([32, 4])
         # Forward pass
         poses_new, x_new = model(x, u)
         # Compute the loss

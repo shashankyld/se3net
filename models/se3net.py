@@ -240,7 +240,9 @@ class TransformNetwork(nn.Module):
         W = mask.shape[-1] 
         H = mask.shape[-2]
         mask = mask.view(-1, self.k, H * W)
-        eps = torch.normal(mean=torch.zeros(self.k, H * W), std=torch.ones(self.k, H * W) * self.sigma ** 2)
+        eps = torch.normal(mean=torch.zeros(self.k, H * W), std=torch.ones(self.k, H * W) * self.sigma ** 2).to(mask.device)
+        # print ("eps device: ", eps.device)
+        # print ("mask device: ", mask.device)
         mask = (mask + eps.unsqueeze(0)) ** self.gamma
         k_sum = torch.sum(mask, dim=1) + 1e-6
         mask = mask / k_sum # sum of all mask weights per pixel equals 1    
@@ -249,7 +251,6 @@ class TransformNetwork(nn.Module):
             ind = torch.max(mask, 1)[1]
             masmaskk_s = torch.zeros(mask.shape)
             mask[torch.arange(len(ind)), ind] = 1.0
-
         return mask
 
     def transform_point_cloud(self, x, mask, delta_poses):
@@ -269,11 +270,11 @@ class TransformNetwork(nn.Module):
         array 3 , H , W
             transformed point cloud of scene, unflattened
         """
-        H = x.shape[-2]
-        W = x.shape[-1]
+        H = x.shape[-2] # x is 32, 3, 224, 224 so H = 224
+        W = x.shape[-1] # W = 224
 
         delta_poses_unflattened = delta_poses.view(self.k, 6)
-        x = x.view(3, -1) # flatten image (H*W)
+        x = x.view(3, -1) # flatten image (H*W) # x is 32, 3, 224, 224 so x is 3, 224, 224 (maybe having 32, 3, -1)
         # get axang of current poses (poses is of dimension  6 * k, where k is the number of obj in scene)
         delta_T = delta_poses_unflattened[:, :3]
         delta_axang = delta_poses_unflattened[:, 3:]
